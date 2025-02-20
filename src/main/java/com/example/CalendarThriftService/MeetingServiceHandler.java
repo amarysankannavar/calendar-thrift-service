@@ -2,6 +2,7 @@ package com.example.CalendarThriftService;
 
 import com.example.CalendarThriftService.generated.EmployeeMeetingStatus;
 import com.example.CalendarThriftService.generated.Meeting;
+import com.example.CalendarThriftService.generated.MeetingException;
 import com.example.CalendarThriftService.generated.MeetingManage;
 import com.example.CalendarThriftService.model.EmployeeModel;
 import com.example.CalendarThriftService.model.MeetingModel;
@@ -17,6 +18,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
@@ -43,8 +45,34 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
     private List<Meeting> meetings = new ArrayList<>();
     private List<EmployeeMeetingStatus> statuses = new ArrayList<>();
 
+    public static boolean checkMeetingPolicy(List<Integer> employeeIds, String date, String startTime, String endTime) throws MeetingException {
+
+           if (employeeIds.size() < 6) return false;
+            logger.info("employees are more than 6.");
+           LocalTime start = LocalTime.parse(startTime);
+           LocalTime end = LocalTime.parse(endTime);
+
+           if (Duration.between(start, end).toMinutes() < 30) return false;
+            logger.info("duration is more than 30 minutes.");
+
+
+        LocalTime workStart = LocalTime.of(10, 0);
+           LocalTime workEnd = LocalTime.of(18, 0);
+
+
+           if (start.isBefore(workStart) || end.isAfter(workEnd)) return false;
+           logger.info("time is in between 10am to 6pm.");
+        return true;
+    }
+
+
+
     @Override
     public boolean canScheduleMeeting(List<Integer> employeeIds, String date, String startTime, String endTime) throws TException {
+        logger.info("checking the policy");
+        if(!checkMeetingPolicy(employeeIds,date,startTime,endTime)){
+            throw new MeetingException("Meeting policies are not met.",400);
+        }
 
         // Simulate checking if any employee has a meeting at the given time
         // For simplicity, assume no conflicts in the demo

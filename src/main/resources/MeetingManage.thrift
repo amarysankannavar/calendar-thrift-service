@@ -13,6 +13,7 @@ struct Meeting {
     9: list<i32> employeeIds  // Store only employee IDs (linked via MeetingStatus)
 }
 
+
 // Enum for Meeting Status
 enum MeetingStatus {
     PENDING,
@@ -28,14 +29,19 @@ struct EmployeeMeetingStatus {
     3: MeetingStatus status
 }
 
+exception MeetingException {
+  1: string message,
+  2: i32 errorCode
+}
+
 // Meeting Service Definition
 service MeetingManage {
 
     // Check if meeting can be scheduled
-    bool canScheduleMeeting(1: list<i32> employeeIds, 2: string date, 3: string startTime, 4: string endTime)
+    bool canScheduleMeeting(1: list<i32> employeeIds, 2: string date, 3: string startTime, 4: string endTime) throws (1: MeetingException ex)
 
     // Schedule a meeting (returns Meeting ID)
-   i32 scheduleMeeting(1: string description, 2: string agenda, 3: list<i32> employeeIds,4: string date, 5: string startTime, 6: string endTime, 7: optional i32 roomId);
+   i32 scheduleMeeting(1: string description, 2: string agenda, 3: list<i32> employeeIds,4: string date, 5: string startTime, 6: string endTime, 7: i32 roomId)  throws (1: MeetingException ex)
 
     // Cancel an existing meeting
     void cancelMeeting(1: i32 meetingId)
