@@ -26,6 +26,8 @@ public class MeetingRoomModel {
         this.office=office;
     }
 
+
+
     public int getRoomId(){
         return roomId;
     }

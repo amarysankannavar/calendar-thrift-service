@@ -47,12 +47,12 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
     public static boolean checkMeetingPolicy(List<Integer> employeeIds, String date, String startTime, String endTime) throws MeetingException {
 
-           if (employeeIds.size() < 6) return false;
+           if (employeeIds.size() < 6)  throw new MeetingException("Atleast 6 employees are required.",400);;
             logger.info("employees are more than 6.");
            LocalTime start = LocalTime.parse(startTime);
            LocalTime end = LocalTime.parse(endTime);
 
-           if (Duration.between(start, end).toMinutes() < 30) return false;
+           if (Duration.between(start, end).toMinutes() < 30)  throw new MeetingException("Meeting duration should be at least 30 minutes.",400);;
             logger.info("duration is more than 30 minutes.");
 
 
@@ -60,7 +60,7 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
            LocalTime workEnd = LocalTime.of(18, 0);
 
 
-           if (start.isBefore(workStart) || end.isAfter(workEnd)) return false;
+           if (start.isBefore(workStart) || end.isAfter(workEnd))  throw new MeetingException("Meetings must be scheduled between 10 am to 6 pm.",400);;
            logger.info("time is in between 10am to 6pm.");
         return true;
     }
