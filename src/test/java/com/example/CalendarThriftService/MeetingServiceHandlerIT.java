@@ -66,8 +66,9 @@ public class MeetingServiceHandlerIT {
         when(employeeRepo.findAvailableEmpoloyees(employeeIds, meetingDate, start, end))
                 .thenReturn(employeeIds);
 
+
         // Act
-        boolean result = meetingServiceHandler.canScheduleMeeting(employeeIds, date, startTime, endTime);
+        boolean result = meetingServiceHandler.canScheduleMeeting(employeeIds, date, startTime, endTime,2);
 
         // Assert
         assertTrue(result, "Meeting should be schedulable");
@@ -81,9 +82,10 @@ public class MeetingServiceHandlerIT {
         String startTime = "10:30";
         String endTime = "11:00";
 
+
         // Act & Assert
         MeetingException exception = assertThrows(MeetingException.class, () ->
-                meetingServiceHandler.canScheduleMeeting(employeeIds, date, startTime, endTime));
+                meetingServiceHandler.canScheduleMeeting(employeeIds, date, startTime, endTime,2));
 
         assertEquals("Atleast 6 employees are required.", exception.getMessage());
     }

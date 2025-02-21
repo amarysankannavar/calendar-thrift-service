@@ -16,6 +16,12 @@ public interface MeetingRoomRepo extends JpaRepository<MeetingRoomModel, Integer
     @Query("SELECT r.roomId FROM MeetingRoomModel r WHERE r.roomId NOT IN (SELECT m.meetingRoom.roomId FROM MeetingModel m WHERE m.date = :date AND (m.startTime < :endTime AND m.endTime > :startTime))")
     List<Integer> findAvailableRoomsOnDateAndTime(LocalDate date, LocalTime startTime, LocalTime endTime);
 
+
     Optional<MeetingRoomModel> findById(Integer roomId);
+
+    @Query("SELECT COUNT(r.roomId) FROM MeetingRoomModel r WHERE r.roomId = :roomId AND NOT EXISTS " +
+            "(SELECT m.meetingRoom.roomId FROM MeetingModel m WHERE m.meetingRoom.roomId = r.roomId " +
+            "AND m.date = :date AND (m.startTime < :endTime AND m.endTime > :startTime))")
+    int checkRoomAvailabilityInTheDuration(int roomId, LocalDate date, LocalTime startTime, LocalTime endTime);
 
 }

@@ -12,7 +12,7 @@ public class MeetingManage {
 
   public interface Iface {
 
-    public boolean canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime) throws MeetingException, org.apache.thrift.TException;
+    public boolean canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId) throws MeetingException, org.apache.thrift.TException;
 
     public int scheduleMeeting(java.lang.String description, java.lang.String agenda, java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId) throws MeetingException, org.apache.thrift.TException;
 
@@ -30,7 +30,7 @@ public class MeetingManage {
 
   public interface AsyncIface {
 
-    public void canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException;
+    public void canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException;
 
     public void scheduleMeeting(java.lang.String description, java.lang.String agenda, java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId, org.apache.thrift.async.AsyncMethodCallback<java.lang.Integer> resultHandler) throws org.apache.thrift.TException;
 
@@ -69,19 +69,20 @@ public class MeetingManage {
     }
 
     @Override
-    public boolean canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime) throws MeetingException, org.apache.thrift.TException
+    public boolean canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId) throws MeetingException, org.apache.thrift.TException
     {
-      send_canScheduleMeeting(employeeIds, date, startTime, endTime);
+      send_canScheduleMeeting(employeeIds, date, startTime, endTime, roomId);
       return recv_canScheduleMeeting();
     }
 
-    public void send_canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime) throws org.apache.thrift.TException
+    public void send_canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId) throws org.apache.thrift.TException
     {
       canScheduleMeeting_args args = new canScheduleMeeting_args();
       args.setEmployeeIds(employeeIds);
       args.setDate(date);
       args.setStartTime(startTime);
       args.setEndTime(endTime);
+      args.setRoomId(roomId);
       sendBase("canScheduleMeeting", args);
     }
 
@@ -266,9 +267,9 @@ public class MeetingManage {
     }
 
     @Override
-    public void canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException {
+    public void canScheduleMeeting(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException {
       checkReady();
-      canScheduleMeeting_call method_call = new canScheduleMeeting_call(employeeIds, date, startTime, endTime, resultHandler, this, ___protocolFactory, ___transport);
+      canScheduleMeeting_call method_call = new canScheduleMeeting_call(employeeIds, date, startTime, endTime, roomId, resultHandler, this, ___protocolFactory, ___transport);
       this.___currentMethod = method_call;
       ___manager.call(method_call);
     }
@@ -278,12 +279,14 @@ public class MeetingManage {
       private java.lang.String date;
       private java.lang.String startTime;
       private java.lang.String endTime;
-      public canScheduleMeeting_call(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
+      private int roomId;
+      public canScheduleMeeting_call(java.util.List<java.lang.Integer> employeeIds, java.lang.String date, java.lang.String startTime, java.lang.String endTime, int roomId, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler, org.apache.thrift.async.TAsyncClient client, org.apache.thrift.protocol.TProtocolFactory protocolFactory, org.apache.thrift.transport.TNonblockingTransport transport) throws org.apache.thrift.TException {
         super(client, protocolFactory, transport, resultHandler, false);
         this.employeeIds = employeeIds;
         this.date = date;
         this.startTime = startTime;
         this.endTime = endTime;
+        this.roomId = roomId;
       }
 
       @Override
@@ -294,6 +297,7 @@ public class MeetingManage {
         args.setDate(date);
         args.setStartTime(startTime);
         args.setEndTime(endTime);
+        args.setRoomId(roomId);
         args.write(prot);
         prot.writeMessageEnd();
       }
@@ -594,7 +598,7 @@ public class MeetingManage {
       public canScheduleMeeting_result getResult(I iface, canScheduleMeeting_args args) throws org.apache.thrift.TException {
         canScheduleMeeting_result result = getEmptyResultInstance();
         try {
-          result.success = iface.canScheduleMeeting(args.employeeIds, args.date, args.startTime, args.endTime);
+          result.success = iface.canScheduleMeeting(args.employeeIds, args.date, args.startTime, args.endTime, args.roomId);
           result.setSuccessIsSet(true);
         } catch (MeetingException ex) {
           result.ex = ex;
@@ -902,7 +906,7 @@ public class MeetingManage {
 
       @Override
       public void start(I iface, canScheduleMeeting_args args, org.apache.thrift.async.AsyncMethodCallback<java.lang.Boolean> resultHandler) throws org.apache.thrift.TException {
-        iface.canScheduleMeeting(args.employeeIds, args.date, args.startTime, args.endTime,resultHandler);
+        iface.canScheduleMeeting(args.employeeIds, args.date, args.startTime, args.endTime, args.roomId,resultHandler);
       }
     }
 
@@ -1351,6 +1355,7 @@ public class MeetingManage {
     private static final org.apache.thrift.protocol.TField DATE_FIELD_DESC = new org.apache.thrift.protocol.TField("date", org.apache.thrift.protocol.TType.STRING, (short)2);
     private static final org.apache.thrift.protocol.TField START_TIME_FIELD_DESC = new org.apache.thrift.protocol.TField("startTime", org.apache.thrift.protocol.TType.STRING, (short)3);
     private static final org.apache.thrift.protocol.TField END_TIME_FIELD_DESC = new org.apache.thrift.protocol.TField("endTime", org.apache.thrift.protocol.TType.STRING, (short)4);
+    private static final org.apache.thrift.protocol.TField ROOM_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("roomId", org.apache.thrift.protocol.TType.I32, (short)5);
 
     private static final org.apache.thrift.scheme.SchemeFactory STANDARD_SCHEME_FACTORY = new canScheduleMeeting_argsStandardSchemeFactory();
     private static final org.apache.thrift.scheme.SchemeFactory TUPLE_SCHEME_FACTORY = new canScheduleMeeting_argsTupleSchemeFactory();
@@ -1359,13 +1364,15 @@ public class MeetingManage {
     public @org.apache.thrift.annotation.Nullable java.lang.String date; // required
     public @org.apache.thrift.annotation.Nullable java.lang.String startTime; // required
     public @org.apache.thrift.annotation.Nullable java.lang.String endTime; // required
+    public int roomId; // required
 
     /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
     public enum _Fields implements org.apache.thrift.TFieldIdEnum {
       EMPLOYEE_IDS((short)1, "employeeIds"),
       DATE((short)2, "date"),
       START_TIME((short)3, "startTime"),
-      END_TIME((short)4, "endTime");
+      END_TIME((short)4, "endTime"),
+      ROOM_ID((short)5, "roomId");
 
       private static final java.util.Map<java.lang.String, _Fields> byName = new java.util.HashMap<java.lang.String, _Fields>();
 
@@ -1389,6 +1396,8 @@ public class MeetingManage {
             return START_TIME;
           case 4: // END_TIME
             return END_TIME;
+          case 5: // ROOM_ID
+            return ROOM_ID;
           default:
             return null;
         }
@@ -1432,6 +1441,8 @@ public class MeetingManage {
     }
 
     // isset id assignments
+    private static final int __ROOMID_ISSET_ID = 0;
+    private byte __isset_bitfield = 0;
     public static final java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
     static {
       java.util.Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new java.util.EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -1444,6 +1455,8 @@ public class MeetingManage {
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
       tmpMap.put(_Fields.END_TIME, new org.apache.thrift.meta_data.FieldMetaData("endTime", org.apache.thrift.TFieldRequirementType.DEFAULT, 
           new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+      tmpMap.put(_Fields.ROOM_ID, new org.apache.thrift.meta_data.FieldMetaData("roomId", org.apache.thrift.TFieldRequirementType.DEFAULT, 
+          new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
       metaDataMap = java.util.Collections.unmodifiableMap(tmpMap);
       org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(canScheduleMeeting_args.class, metaDataMap);
     }
@@ -1455,19 +1468,23 @@ public class MeetingManage {
       java.util.List<java.lang.Integer> employeeIds,
       java.lang.String date,
       java.lang.String startTime,
-      java.lang.String endTime)
+      java.lang.String endTime,
+      int roomId)
     {
       this();
       this.employeeIds = employeeIds;
       this.date = date;
       this.startTime = startTime;
       this.endTime = endTime;
+      this.roomId = roomId;
+      setRoomIdIsSet(true);
     }
 
     /**
      * Performs a deep copy on <i>other</i>.
      */
     public canScheduleMeeting_args(canScheduleMeeting_args other) {
+      __isset_bitfield = other.__isset_bitfield;
       if (other.isSetEmployeeIds()) {
         java.util.List<java.lang.Integer> __this__employeeIds = new java.util.ArrayList<java.lang.Integer>(other.employeeIds);
         this.employeeIds = __this__employeeIds;
@@ -1481,6 +1498,7 @@ public class MeetingManage {
       if (other.isSetEndTime()) {
         this.endTime = other.endTime;
       }
+      this.roomId = other.roomId;
     }
 
     @Override
@@ -1494,6 +1512,8 @@ public class MeetingManage {
       this.date = null;
       this.startTime = null;
       this.endTime = null;
+      setRoomIdIsSet(false);
+      this.roomId = 0;
     }
 
     public int getEmployeeIdsSize() {
@@ -1612,6 +1632,29 @@ public class MeetingManage {
       }
     }
 
+    public int getRoomId() {
+      return this.roomId;
+    }
+
+    public canScheduleMeeting_args setRoomId(int roomId) {
+      this.roomId = roomId;
+      setRoomIdIsSet(true);
+      return this;
+    }
+
+    public void unsetRoomId() {
+      __isset_bitfield = org.apache.thrift.EncodingUtils.clearBit(__isset_bitfield, __ROOMID_ISSET_ID);
+    }
+
+    /** Returns true if field roomId is set (has been assigned a value) and false otherwise */
+    public boolean isSetRoomId() {
+      return org.apache.thrift.EncodingUtils.testBit(__isset_bitfield, __ROOMID_ISSET_ID);
+    }
+
+    public void setRoomIdIsSet(boolean value) {
+      __isset_bitfield = org.apache.thrift.EncodingUtils.setBit(__isset_bitfield, __ROOMID_ISSET_ID, value);
+    }
+
     @Override
     public void setFieldValue(_Fields field, @org.apache.thrift.annotation.Nullable java.lang.Object value) {
       switch (field) {
@@ -1647,6 +1690,14 @@ public class MeetingManage {
         }
         break;
 
+      case ROOM_ID:
+        if (value == null) {
+          unsetRoomId();
+        } else {
+          setRoomId((java.lang.Integer)value);
+        }
+        break;
+
       }
     }
 
@@ -1665,6 +1716,9 @@ public class MeetingManage {
 
       case END_TIME:
         return getEndTime();
+
+      case ROOM_ID:
+        return getRoomId();
 
       }
       throw new java.lang.IllegalStateException();
@@ -1686,6 +1740,8 @@ public class MeetingManage {
         return isSetStartTime();
       case END_TIME:
         return isSetEndTime();
+      case ROOM_ID:
+        return isSetRoomId();
       }
       throw new java.lang.IllegalStateException();
     }
@@ -1739,6 +1795,15 @@ public class MeetingManage {
           return false;
       }
 
+      boolean this_present_roomId = true;
+      boolean that_present_roomId = true;
+      if (this_present_roomId || that_present_roomId) {
+        if (!(this_present_roomId && that_present_roomId))
+          return false;
+        if (this.roomId != that.roomId)
+          return false;
+      }
+
       return true;
     }
 
@@ -1761,6 +1826,8 @@ public class MeetingManage {
       hashCode = hashCode * 8191 + ((isSetEndTime()) ? 131071 : 524287);
       if (isSetEndTime())
         hashCode = hashCode * 8191 + endTime.hashCode();
+
+      hashCode = hashCode * 8191 + roomId;
 
       return hashCode;
     }
@@ -1809,6 +1876,16 @@ public class MeetingManage {
       }
       if (isSetEndTime()) {
         lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.endTime, other.endTime);
+        if (lastComparison != 0) {
+          return lastComparison;
+        }
+      }
+      lastComparison = java.lang.Boolean.compare(isSetRoomId(), other.isSetRoomId());
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+      if (isSetRoomId()) {
+        lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.roomId, other.roomId);
         if (lastComparison != 0) {
           return lastComparison;
         }
@@ -1868,6 +1945,10 @@ public class MeetingManage {
         sb.append(this.endTime);
       }
       first = false;
+      if (!first) sb.append(", ");
+      sb.append("roomId:");
+      sb.append(this.roomId);
+      first = false;
       sb.append(")");
       return sb.toString();
     }
@@ -1887,6 +1968,8 @@ public class MeetingManage {
 
     private void readObject(java.io.ObjectInputStream in) throws java.io.IOException, java.lang.ClassNotFoundException {
       try {
+        // it doesn't seem like you should have to do this, but java serialization is wacky, and doesn't call the default constructor.
+        __isset_bitfield = 0;
         read(new org.apache.thrift.protocol.TCompactProtocol(new org.apache.thrift.transport.TIOStreamTransport(in)));
       } catch (org.apache.thrift.TException te) {
         throw new java.io.IOException(te);
@@ -1955,6 +2038,14 @@ public class MeetingManage {
                 org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
               }
               break;
+            case 5: // ROOM_ID
+              if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+                struct.roomId = iprot.readI32();
+                struct.setRoomIdIsSet(true);
+              } else { 
+                org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+              }
+              break;
             default:
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
           }
@@ -1998,6 +2089,9 @@ public class MeetingManage {
           oprot.writeString(struct.endTime);
           oprot.writeFieldEnd();
         }
+        oprot.writeFieldBegin(ROOM_ID_FIELD_DESC);
+        oprot.writeI32(struct.roomId);
+        oprot.writeFieldEnd();
         oprot.writeFieldStop();
         oprot.writeStructEnd();
       }
@@ -2029,7 +2123,10 @@ public class MeetingManage {
         if (struct.isSetEndTime()) {
           optionals.set(3);
         }
-        oprot.writeBitSet(optionals, 4);
+        if (struct.isSetRoomId()) {
+          optionals.set(4);
+        }
+        oprot.writeBitSet(optionals, 5);
         if (struct.isSetEmployeeIds()) {
           {
             oprot.writeI32(struct.employeeIds.size());
@@ -2048,12 +2145,15 @@ public class MeetingManage {
         if (struct.isSetEndTime()) {
           oprot.writeString(struct.endTime);
         }
+        if (struct.isSetRoomId()) {
+          oprot.writeI32(struct.roomId);
+        }
       }
 
       @Override
       public void read(org.apache.thrift.protocol.TProtocol prot, canScheduleMeeting_args struct) throws org.apache.thrift.TException {
         org.apache.thrift.protocol.TTupleProtocol iprot = (org.apache.thrift.protocol.TTupleProtocol) prot;
-        java.util.BitSet incoming = iprot.readBitSet(4);
+        java.util.BitSet incoming = iprot.readBitSet(5);
         if (incoming.get(0)) {
           {
             org.apache.thrift.protocol.TList _list13 = iprot.readListBegin(org.apache.thrift.protocol.TType.I32);
@@ -2078,6 +2178,10 @@ public class MeetingManage {
         if (incoming.get(3)) {
           struct.endTime = iprot.readString();
           struct.setEndTimeIsSet(true);
+        }
+        if (incoming.get(4)) {
+          struct.roomId = iprot.readI32();
+          struct.setRoomIdIsSet(true);
         }
       }
     }

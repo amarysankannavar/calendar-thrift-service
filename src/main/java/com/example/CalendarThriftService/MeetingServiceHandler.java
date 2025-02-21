@@ -23,8 +23,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
-
 @Component
 public class MeetingServiceHandler implements MeetingManage.Iface {
     @Autowired
@@ -47,13 +45,17 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
     public static boolean checkMeetingPolicy(List<Integer> employeeIds, String date, String startTime, String endTime) throws MeetingException {
 
-           if (employeeIds.size() < 6)  throw new MeetingException("Atleast 6 employees are required.",400);;
+           if (employeeIds.size() > 6)  throw new MeetingException("Atleast 6 employees are required.",400);;
             logger.info("employees are more than 6.");
            LocalTime start = LocalTime.parse(startTime);
            LocalTime end = LocalTime.parse(endTime);
 
            if (Duration.between(start, end).toMinutes() < 30)  throw new MeetingException("Meeting duration should be at least 30 minutes.",400);;
             logger.info("duration is more than 30 minutes.");
+
+            if(LocalDate.parse(date).isBefore(LocalDate.now())){
+                throw new MeetingException("Meeting can't be scheduled in past.",400);
+            }
 
 
         LocalTime workStart = LocalTime.of(10, 0);
@@ -68,41 +70,61 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
 
     @Override
-    public boolean canScheduleMeeting(List<Integer> employeeIds, String date, String startTime, String endTime) throws TException {
+    public boolean canScheduleMeeting(List<Integer> employeeIds, String date, String startTime, String endTime,int roomId) throws TException {
         logger.info("checking the policy");
         if(!checkMeetingPolicy(employeeIds,date,startTime,endTime)){
             throw new MeetingException("Meeting policies are not met.",400);
         }
 
-        // Simulate checking if any employee has a meeting at the given time
-        // For simplicity, assume no conflicts in the demo
         logger.info("entered the canScheduleMeeting method in MeetingHandlerService ");
 
         LocalTime start = LocalTime.parse(startTime);
         LocalTime end = LocalTime.parse(endTime);
         LocalDate meetingDate = LocalDate.parse(date);
-        List<Integer> rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(meetingDate,start,end);
-        logger.info("rooms are fetched "+rooms);
+
+        if(roomId!=0){
+            if (!meetingRoomRepo.findById(roomId).isPresent()) {
+                throw new MeetingException("Room not found. ",400);
+            }
+
+            int cnt = meetingRoomRepo.checkRoomAvailabilityInTheDuration(roomId,meetingDate,start,end);
+            if(cnt==0){
+                logger.info("the given room is not available.");
+                throw new MeetingException("The given room is not free.",400);
+            }
+        }
+        else{
+            List<Integer> rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(meetingDate,start,end);
+            logger.info("rooms are fetched "+rooms);
+            if(rooms.isEmpty()){
+                return false;
+            }
+            logger.info("available rooms are: "+rooms);
+        }
+
+
+
+
         List<Integer> availableEmployees = employeeRepo.findAvailableEmpoloyees(employeeIds, meetingDate, start, end);
         logger.info("available employees are: "+availableEmployees);
         if(availableEmployees.size()!=employeeIds.size()){
             return false;
         }
-        if(rooms.isEmpty()){
-            return false;
-        }
-        logger.info("available rooms are: "+rooms);
+
+
 
 
         return true;
 
     }
 
+
+
     @Override
     public int scheduleMeeting(String description, String agenda, List<Integer> employeeIds, String date, String startTime, String endTime, int roomId) throws TException {
         // Create a new meeting and assign an ID
 
-        if(!canScheduleMeeting(employeeIds,date,startTime,endTime)){
+        if(!canScheduleMeeting(employeeIds,date,startTime,endTime,roomId)){
             return 0;
         }
 
