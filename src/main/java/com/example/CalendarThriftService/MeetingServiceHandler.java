@@ -1,9 +1,7 @@
 package com.example.CalendarThriftService;
 
-import com.example.CalendarThriftService.generated.EmployeeMeetingStatus;
-import com.example.CalendarThriftService.generated.Meeting;
-import com.example.CalendarThriftService.generated.MeetingException;
-import com.example.CalendarThriftService.generated.MeetingManage;
+import com.example.CalendarThriftService.errorCode.MeetingErrorCode;
+import com.example.CalendarThriftService.generated.*;
 import com.example.CalendarThriftService.model.EmployeeModel;
 import com.example.CalendarThriftService.model.MeetingModel;
 import com.example.CalendarThriftService.model.MeetingRoomModel;
@@ -43,18 +41,24 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
     private List<Meeting> meetings = new ArrayList<>();
     private List<EmployeeMeetingStatus> statuses = new ArrayList<>();
 
-    public static boolean checkMeetingPolicy(List<Integer> employeeIds, String date, String startTime, String endTime) throws MeetingException {
+    public static boolean checkMeetingPolicy(MeetingRequest meetingRequest) throws MeetingException {
 
-           if (employeeIds.size() > 6)  throw new MeetingException("Atleast 6 employees are required.",400);;
-            logger.info("employees are more than 6.");
-           LocalTime start = LocalTime.parse(startTime);
-           LocalTime end = LocalTime.parse(endTime);
+        if (meetingRequest.getEmployeeIds().size() < 6) {
+            throw new MeetingException(MeetingErrorCode.INVALID_PARTICIPANTS.getMessage(),
+                    MeetingErrorCode.INVALID_PARTICIPANTS.getCode());
+        }
 
-           if (Duration.between(start, end).toMinutes() < 30)  throw new MeetingException("Meeting duration should be at least 30 minutes.",400);;
-            logger.info("duration is more than 30 minutes.");
 
-            if(LocalDate.parse(date).isBefore(LocalDate.now())){
-                throw new MeetingException("Meeting can't be scheduled in past.",400);
+        logger.info("employees are more than 6.");
+           LocalTime start = LocalTime.parse(meetingRequest.getStartTime());
+           LocalTime end = LocalTime.parse(meetingRequest.getEndTime());
+
+           if (Duration.between(start, end).toMinutes() < 30)  throw new MeetingException(MeetingErrorCode.SHORT_MEETING_DURATION.getMessage(),
+                   MeetingErrorCode.SHORT_MEETING_DURATION.getCode());
+
+            if(LocalDate.parse(meetingRequest.getDate()).isBefore(LocalDate.now())){
+                throw new MeetingException(MeetingErrorCode.PAST_MEETING.getMessage(),
+                        MeetingErrorCode.PAST_MEETING.getCode());
             }
 
 
@@ -62,7 +66,10 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
            LocalTime workEnd = LocalTime.of(18, 0);
 
 
-           if (start.isBefore(workStart) || end.isAfter(workEnd))  throw new MeetingException("Meetings must be scheduled between 10 am to 6 pm.",400);;
+           if (start.isBefore(workStart) || end.isAfter(workEnd)) {
+               throw new MeetingException(MeetingErrorCode.OUTSIDE_WORK_HOURS.getMessage(),
+                       MeetingErrorCode.OUTSIDE_WORK_HOURS.getCode());
+           };
            logger.info("time is in between 10am to 6pm.");
         return true;
     }
@@ -70,34 +77,47 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
 
     @Override
-    public boolean canScheduleMeeting(List<Integer> employeeIds, String date, String startTime, String endTime,int roomId) throws TException {
+    public int canScheduleMeeting(MeetingRequest meetingRequest, int roomId) throws TException {
         logger.info("checking the policy");
-        if(!checkMeetingPolicy(employeeIds,date,startTime,endTime)){
-            throw new MeetingException("Meeting policies are not met.",400);
+        try{
+            if(!checkMeetingPolicy(meetingRequest)){
+                throw new MeetingException("Meeting policies are not met.",400);
+            }
+        } catch (MeetingException e) {
+            logger.error("error while checkking the policy");
+            throw e;
         }
 
         logger.info("entered the canScheduleMeeting method in MeetingHandlerService ");
 
-        LocalTime start = LocalTime.parse(startTime);
-        LocalTime end = LocalTime.parse(endTime);
-        LocalDate meetingDate = LocalDate.parse(date);
-
+        LocalTime start = LocalTime.parse(meetingRequest.getStartTime());
+        LocalTime end = LocalTime.parse(meetingRequest.getEndTime());
+        LocalDate meetingDate = LocalDate.parse(meetingRequest.getDate());
+        List<Integer> employeeIds = meetingRequest.getEmployeeIds();
+        List<Integer> rooms = new ArrayList<>();
         if(roomId!=0){
+            logger.info("Checking room with ID: " + roomId);
             if (!meetingRoomRepo.findById(roomId).isPresent()) {
-                throw new MeetingException("Room not found. ",400);
+                logger.error("Room with ID " + roomId + " does not exist.");
+                throw new MeetingException(MeetingErrorCode.ROOM_NOT_FOUND.getMessage(), MeetingErrorCode.ROOM_NOT_FOUND.getCode());
             }
 
             int cnt = meetingRoomRepo.checkRoomAvailabilityInTheDuration(roomId,meetingDate,start,end);
+            logger.info("Availability check result for Room " + roomId + ": " + cnt);
+
             if(cnt==0){
                 logger.info("the given room is not available.");
-                throw new MeetingException("The given room is not free.",400);
+                throw new MeetingException(MeetingErrorCode.GIVEN_ROOM_NOT_AVAILABLE.getMessage(), MeetingErrorCode.GIVEN_ROOM_NOT_AVAILABLE.getCode());
+            }
+            else {
+                return roomId;
             }
         }
         else{
-            List<Integer> rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(meetingDate,start,end);
+            rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(meetingDate,start,end);
             logger.info("rooms are fetched "+rooms);
             if(rooms.isEmpty()){
-                return false;
+                throw new MeetingException(MeetingErrorCode.ROOMS_NOT_AVAILABLE.getMessage(), MeetingErrorCode.ROOMS_NOT_AVAILABLE.getCode());
             }
             logger.info("available rooms are: "+rooms);
         }
@@ -106,32 +126,36 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
 
         List<Integer> availableEmployees = employeeRepo.findAvailableEmpoloyees(employeeIds, meetingDate, start, end);
-        logger.info("available employees are: "+availableEmployees);
+        logger.info("available employees are: "+availableEmployees+"rooms:"+rooms);
         if(availableEmployees.size()!=employeeIds.size()){
-            return false;
+           throw new MeetingException(MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getMessage(),
+                   MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getCode());
         }
 
 
 
 
-        return true;
+        return rooms.get(0);
 
     }
 
 
 
     @Override
-    public int scheduleMeeting(String description, String agenda, List<Integer> employeeIds, String date, String startTime, String endTime, int roomId) throws TException {
+    public MeetingResponse scheduleMeeting(MeetingInformation meetingInformation, MeetingRequest meetingRequest, int roomId) throws TException {
         // Create a new meeting and assign an ID
 
-        if(!canScheduleMeeting(employeeIds,date,startTime,endTime,roomId)){
-            return 0;
+        int availableRoomId = canScheduleMeeting(meetingRequest,roomId);
+        if(availableRoomId==-1){
+            return new MeetingResponse(-1,-1);
         }
 
-
-        LocalDate formatDate = LocalDate.parse(date);
-        LocalTime start = LocalTime.parse(startTime);
-        LocalTime end = LocalTime.parse(endTime);
+        String description = meetingInformation.getDescription();
+        String agenda = meetingInformation.getAgenda();
+        LocalDate formatDate = LocalDate.parse(meetingRequest.getDate());
+        LocalTime start = LocalTime.parse(meetingRequest.getStartTime());
+        LocalTime end = LocalTime.parse(meetingRequest.getEndTime());
+        List<Integer> employeeIds = meetingRequest.getEmployeeIds();
         List<Integer> rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(formatDate,start,end);
         int scheduledRoom = rooms.get(0);
 
@@ -158,8 +182,10 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
 
         // Return the assigned meeting ID
-        return saved.getId();
+        return new MeetingResponse(saved.getId(),availableRoomId);
     }
+
+
 
     @Override
     public void cancelMeeting(int meetingId) throws TException {
