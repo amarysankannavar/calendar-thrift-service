@@ -97,7 +97,14 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
         LocalDate meetingDate = LocalDate.parse(meetingRequest.getDate());
         List<Integer> employeeIds = meetingRequest.getEmployeeIds();
         List<Integer> rooms = new ArrayList<>();
-        if(roomId!=0){
+
+        List<Integer> availableEmployees = employeeRepo.findAvailableEmpoloyees(employeeIds, meetingDate, start, end);
+        logger.info("available employees are: "+availableEmployees+"rooms:"+rooms);
+        if(availableEmployees.size()!=employeeIds.size()){
+            throw new MeetingException(MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getMessage(),
+                    MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getCode());
+        }
+        if(roomId>0){
             logger.info("Checking room with ID: " + roomId);
             Optional<MeetingRoomModel> room = meetingRoomRepo.findById(roomId);
 
@@ -115,6 +122,7 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
                 throw new MeetingException(MeetingErrorCode.GIVEN_ROOM_NOT_AVAILABLE.getMessage(), MeetingErrorCode.GIVEN_ROOM_NOT_AVAILABLE.getCode());
             }
             else {
+                logger.info("returning value:"+roomId);
                 return roomId;
             }
         }
@@ -130,16 +138,10 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
 
 
-        List<Integer> availableEmployees = employeeRepo.findAvailableEmpoloyees(employeeIds, meetingDate, start, end);
-        logger.info("available employees are: "+availableEmployees+"rooms:"+rooms);
-        if(availableEmployees.size()!=employeeIds.size()){
-           throw new MeetingException(MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getMessage(),
-                   MeetingErrorCode.EMPLOYEES_NOT_AVAILABLE.getCode());
-        }
 
 
 
-
+        logger.info("returning value:"+roomId);
         return rooms.get(0);
 
     }
@@ -151,9 +153,10 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
         // Create a new meeting and assign an ID
 
         int availableRoomId = canScheduleMeeting(meetingRequest,roomId);
-        if(availableRoomId==-1){
+        if(availableRoomId<=0){
             return new MeetingResponse(-1,-1);
         }
+        logger.info("schedule meeting after can schedule");
 
         String description = meetingInformation.getDescription();
         String agenda = meetingInformation.getAgenda();
@@ -161,16 +164,17 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
         LocalTime start = LocalTime.parse(meetingRequest.getStartTime());
         LocalTime end = LocalTime.parse(meetingRequest.getEndTime());
         List<Integer> employeeIds = meetingRequest.getEmployeeIds();
-        List<Integer> rooms = meetingRoomRepo.findAvailableRoomsOnDateAndTime(formatDate,start,end);
-        int scheduledRoom = rooms.get(0);
 
-        MeetingRoomModel roomModel = meetingRoomRepo.findById(scheduledRoom).orElse(null);
+
+
+        MeetingRoomModel roomModel = meetingRoomRepo.findById(availableRoomId).orElse(null);
         MeetingModel model = new MeetingModel(description,agenda,roomModel,formatDate,start,end,true);
-
+        logger.info("before saving the model");
 
       MeetingModel saved =  meetingRepo.save(model);
 
         List<MeetingStatusModel> statusList = new ArrayList<>();
+        logger.info("bedore employeeid for loop");
         for (Integer employeeId : employeeIds) {
             EmployeeModel emp = employeeRepo.findEmployeeById(employeeId);
             MeetingStatusModel status = new MeetingStatusModel(emp,saved,"accepted");
@@ -178,13 +182,14 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
             status.setStatus("Scheduled");
             statusList.add(status);
         }
+        logger.info("after employeeid for loop");
 
         // Save all meeting statuses
         meetingStatusRepo.saveAll(statusList);
 
 
 
-
+        logger.info("just before return statement");
 
         // Return the assigned meeting ID
         return new MeetingResponse(saved.getId(),availableRoomId);
