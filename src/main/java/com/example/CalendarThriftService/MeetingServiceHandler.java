@@ -21,6 +21,8 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+
 @Component
 public class MeetingServiceHandler implements MeetingManage.Iface {
     @Autowired
@@ -97,10 +99,13 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
         List<Integer> rooms = new ArrayList<>();
         if(roomId!=0){
             logger.info("Checking room with ID: " + roomId);
-            if (!meetingRoomRepo.findById(roomId).isPresent()) {
+            Optional<MeetingRoomModel> room = meetingRoomRepo.findById(roomId);
+
+            if (!room.isPresent() || !room.get().isAvailable()) {
                 logger.error("Room with ID " + roomId + " does not exist.");
                 throw new MeetingException(MeetingErrorCode.ROOM_NOT_FOUND.getMessage(), MeetingErrorCode.ROOM_NOT_FOUND.getCode());
             }
+
 
             int cnt = meetingRoomRepo.checkRoomAvailabilityInTheDuration(roomId,meetingDate,start,end);
             logger.info("Availability check result for Room " + roomId + ": " + cnt);
