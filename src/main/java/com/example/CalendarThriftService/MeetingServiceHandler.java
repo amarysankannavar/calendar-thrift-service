@@ -154,7 +154,7 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
 
         int availableRoomId = canScheduleMeeting(meetingRequest,roomId);
         if(availableRoomId<=0){
-            return new MeetingResponse(-1,-1);
+            return new MeetingResponse(-1,-1,null);
         }
         logger.info("schedule meeting after can schedule");
 
@@ -187,12 +187,15 @@ public class MeetingServiceHandler implements MeetingManage.Iface {
         // Save all meeting statuses
         meetingStatusRepo.saveAll(statusList);
 
+        String roomName =meetingRoomRepo.findRoomNameById(availableRoomId);
+        logger.info("the room name is:"+roomName);
+
 
 
         logger.info("just before return statement");
 
         // Return the assigned meeting ID
-        return new MeetingResponse(saved.getId(),availableRoomId);
+        return new MeetingResponse(saved.getId(),availableRoomId,roomName);
     }
 
 
